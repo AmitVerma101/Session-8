@@ -1,0 +1,160 @@
+let i=0;
+const express = require('express')
+const fs = require('fs');
+const multer  = require('multer')
+const upload = multer({ dest: 'uploads/' })
+let crypto = require('crypto');
+const app = express()
+const port = 3000
+
+
+app.use(express.static('public'))
+app.use(express.static('uploads'));
+app.use(express.json());
+// app.get('/', (req, res) => {
+//   res.send('Hello World!')
+// })
+
+//saving the data into db.txt
+app.post('/savetodo',upload.single('profilePic'),function(req,res){
+        console.log(req.body);
+        console.log(req.file);
+        
+      //  res.end("Lets check out if image is sended successfully or not")
+        fs.readFile(__dirname+"/db.txt","utf-8",function(err,data){
+            let todos;
+                if(err){
+                    res.send("error");
+                }
+                else {
+                  //  console.log("I am here")
+                    if(data.length === 0){
+                        todos=[]
+                        i=0;
+                    
+                    }
+                    else {
+                        todos=JSON.parse(data);
+                    }
+                    let obj={id:i,task:req.body.tArea,checked:false,image:req.file.filename}
+                    todos.push(obj);
+                    console.log(todos);
+                    fs.writeFile('./db.txt',JSON.stringify(todos),function(err){
+                       i++;
+                        res.redirect('/')
+
+                    })
+                }
+        })
+})
+
+//extracting the data from db.txt
+app.post('/getdata',(req,res)=>{
+       fs.readFile(__dirname+"/db.txt",(err,data)=>{
+        let todos;
+        if(err){
+            res.send("An error occured in reading the file");
+        }
+        else {
+                if(data.length === 0){
+                    todos=[]
+                }
+                else {
+                    todos=JSON.parse(data)
+                    // console.log("printing the value of todos"+todos)
+                    // console.log(typeof )
+                }
+                res.json(todos);
+        }
+       })
+})
+
+//creating an endpoing for checkbox and delete functionality
+app.post('/update',(req,res)=>{
+    //  let element=JSON.stringify(req.body);
+    let element;
+     let id=req.body.id;
+    //  console.log(id)
+    // console.log(req.body)
+   
+    
+     fs.readFile(__dirname+"/db.txt","utf-8",(err,data)=>{
+        //  let variable;
+        if(err){
+            let obj=[];
+            res.send("An Error occured");
+        }
+        else {
+            obj =JSON.parse(data);
+            // console.log("here");
+            // console.log(obj)
+           // res.send("hello")
+            obj.forEach(function(value){
+                // console.log(value.id,id);
+                if(value.id==id){
+                    value.checked=!value.checked;
+                    element=value;
+                    // variable=value.checked
+                  //  console.log("me chala");
+                }
+               
+            })
+           // res.send("hi");
+            fs.writeFile('./db.txt',JSON.stringify(obj),(err)=>{
+                if(err){
+                    res.end("error occurs while writing file")
+                }
+                else {
+                    res.json(element);
+                }
+            })
+       }
+      })
+})
+app.post('/delete',(req,res)=>{
+    //  let element=JSON.stringify(req.body);
+    
+    let id=req.body.id;
+    // console.log(id)
+    // console.log(req.body)
+  
+    
+     fs.readFile(__dirname+"/db.txt","utf-8",(err,data)=>{
+        //  let variable;
+        if(err){
+            let obj=[];
+            res.send("An Error occured");
+        }
+        else {
+            obj =JSON.parse(data);
+            // console.log("here");
+            // console.log(obj)
+           // res.send("hello")
+           let newObj= obj.filter(function(value){
+              //  console.log(value.id,id);
+                if(value.id==id){
+                   return false;
+                    // variable=value.checked    
+                }
+                else {
+                    return true;
+                }
+               
+            })
+            
+           // res.send("hi");
+            fs.writeFile('./db.txt',JSON.stringify(newObj),(err)=>{
+                if(err){
+                    res.end("error occurs while writing file")
+                }
+                else {
+                    res.end("Element deleted successfully");
+                }
+            })
+       }
+      })
+})
+
+app.listen(port, () => {
+ // console.log(`Example app listening on port ${port}`)
+})
